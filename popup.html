@@ -1,0 +1,61 @@
+const MICROSERVICE1_URL = "http://192.168.37.160:5001/process-url";
+const MICROSERVICE2_URL = "http://192.168.37.160:5002/convert-url";
+const MICROSERVICE3_URL = "http://192.168.37.160:5003/convert-image";
+const MICROSERVICE4_URL = "http://192.168.37.160:5004/predict";
+
+async function sendToMicroservice(url, data) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+  return response.json();
+}
+
+async function checkAdSecurity(tabId, url) {
+  try {
+    // Envoyer l'URL au microservice 1 pour récupérer les images de pubs
+    const images = await sendToMicroservice(MICROSERVICE1_URL, { url });
+    
+    // Envoyer l'URL au microservice 2 pour la convertir en vecteur
+    const urlVector = await sendToMicroservice(MICROSERVICE2_URL, { url });
+
+    let isSecure = true;
+
+    // Pour chaque image, la convertir en vecteur et vérifier la sécurité
+    for (const image of images) {
+      const imageVector = await sendToMicroservice(MICROSERVICE3_URL, { image });
+      const prediction = await sendToMicroservice(MICROSERVICE4_URL, {
+        urlVector,
+        imageVector
+      });
+
+      if (!prediction.isSecure) {
+        isSecure = false;
+        break;
+      }
+    }
+
+    // Afficher une popup si une pub n'est pas sécurisée
+    if (!isSecure) {
+      chrome.scripting.executeScript({
+        target: { tabId },
+        function: showWarningPopup
+      });
+    }
+  } catch (error) {
+    console.error("Error checking ad security:", error);
+  }
+}
+
+function showWarningPopup() {
+  alert("Cette page contient des publicités non sécurisées !");
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.active) {
+    checkAdSecurity(tabId, tab.url);
+  }
+});
