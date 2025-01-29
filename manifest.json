@@ -6,7 +6,7 @@
     "icons": {
       "48": "Logo.jpeg"
     },
-    "permissions": ["activeTab", "notifications", "tabs", "webRequest", "webRequestBlocking", "http://localhost:50002/*", "http://192.168.37.160:50002/*", "<all_urls>"],
+    "permissions": ["activeTab", "notifications", "tabs", "webRequest", "webRequestBlocking", "http://localhost:50002/*", "http://192.168.65.44:50001/*", "<all_urls>"],
     "background": {
       "scripts": ["background.js"],
       "type" : "module"
